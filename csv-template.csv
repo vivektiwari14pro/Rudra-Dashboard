@@ -1,0 +1,2 @@
+tripId,date,vehicleNo,transporter,loadingLocation,unloadingLocation,gatePassNo,challanNo,loadingQty,unloadingQty,freight,cashAdvance,bankAdvance,deductions,hsdSlipNo,gps,fastag,status
+TR-1001,2026-09-18,UP64BT1234,Rudra Transport,Vindhyanagar,Ghazipur,GP-901,CH-501,30,29.6,18500,3000,2000,300,HSD-701,Verified,Verified,Completed
