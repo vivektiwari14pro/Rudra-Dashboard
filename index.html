@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rudra Transport Dashboard</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f7fb;color:#172033}
+header{background:#111827;color:#fff;padding:22px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}header h1{margin:0;font-size:24px}header p{margin:4px 0 0;color:#cbd5e1;font-size:13px}.actions{display:flex;gap:8px;flex-wrap:wrap}
+button,.file{border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer;background:#fff;color:#111827}.primary{background:#2563eb;color:#fff}.file input{display:none}
+main{max-width:1500px;margin:auto;padding:22px}.filters{background:#fff;padding:16px;border-radius:14px;box-shadow:0 2px 12px #0000000a;display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px}
+select,input{width:100%;padding:10px;border:1px solid #d8dee9;border-radius:9px;background:#fff;color:#172033}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:18px}.card{background:#fff;border-radius:14px;padding:16px;box-shadow:0 2px 12px #0000000a}.label{font-size:12px;color:#667085}.value{font-size:25px;font-weight:800;margin-top:5px}.sub{font-size:11px;color:#667085;margin-top:3px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}.chart{min-height:280px}.bar{display:flex;align-items:center;gap:9px;margin:13px 0}.bar span:first-child{width:115px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.track{height:11px;background:#e8edf5;border-radius:10px;flex:1}.fill{height:100%;background:#2563eb;border-radius:10px}.bar b{font-size:12px;width:55px;text-align:right}
+.tablebox{background:#fff;border-radius:14px;padding:16px;box-shadow:0 2px 12px #0000000a;overflow:auto}table{width:100%;border-collapse:collapse;min-width:1200px}th,td{text-align:left;padding:11px 9px;border-bottom:1px solid #edf0f5;font-size:12px;white-space:nowrap}th{color:#667085;background:#fafbfc}.badge{padding:5px 8px;border-radius:999px;font-weight:700;font-size:11px}.completed{background:#dcfce7;color:#166534}.pending{background:#fef3c7;color:#92400e}.transit{background:#dbeafe;color:#1d4ed8}
+.empty{text-align:center;padding:35px;color:#667085}.muted{color:#667085;font-size:12px}
+@media(max-width:1000px){.filters{grid-template-columns:repeat(3,1fr)}.kpis{grid-template-columns:repeat(3,1fr)}}@media(max-width:650px){header{padding:18px;align-items:flex-start;flex-direction:column}main{padding:12px}.filters{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}}
+</style></head>
+<body>
+<header><div><h1>🚚 Rudra Transport Dashboard</h1><p>Location-wise transporter trip monitoring • Rudraksha Enterprises</p></div>
+<div class="actions"><label class="file">📥 Import CSV<input id="csv" type="file" accept=".csv"></label><button class="primary" onclick="downloadCSV()">📤 Export CSV</button></div></header>
+<main>
+<section class="filters">
+<input id="from" type="date"><input id="to" type="date">
+<select id="load"><option value="">All Loading Locations</option></select>
+<select id="unload"><option value="">All Unloading Locations</option></select>
+<select id="trans"><option value="">All Transporters</option></select>
+<select id="status"><option value="">All Status</option><option>Completed</option><option>In Transit</option><option>Pending</option></select>
+</section>
+<section class="kpis" id="kpis"></section>
+<section class="grid"><div class="card chart"><h3>📍 Trips by Unloading Location</h3><div id="locationChart"></div></div><div class="card chart"><h3>🚛 Transporter-wise Trips</h3><div id="transChart"></div></div></section>
+<section class="tablebox"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h3 style="margin:0">Trip Details</h3><span class="muted" id="count"></span></div></div>
+<table><thead><tr><th>Trip ID</th><th>Date</th><th>Vehicle</th><th>Transporter</th><th>Loading</th><th>Unloading</th><th>Gate Pass</th><th>Challan</th><th>Load MT</th><th>Unload MT</th><th>Shortage</th><th>Freight</th><th>Advance</th><th>Deduction</th><th>Net Payable</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table></section>
+</main>
+<script>
+let trips=[
+{tripId:"TR-1001",date:"2026-09-18",vehicleNo:"UP64BT1234",transporter:"Rudra Transport",loadingLocation:"Vindhyanagar",unloadingLocation:"Ghazipur",gatePassNo:"GP-901",challanNo:"CH-501",loadingQty:30,unloadingQty:29.6,freight:18500,cashAdvance:3000,bankAdvance:2000,deductions:300,status:"Completed"},
+{tripId:"TR-1002",date:"2026-09-18",vehicleNo:"UP64CT5678",transporter:"Shiv Transport",loadingLocation:"Vindhyanagar",unloadingLocation:"Jaunpur",gatePassNo:"GP-902",challanNo:"CH-502",loadingQty:31,unloadingQty:30.7,freight:21000,cashAdvance:4000,bankAdvance:0,deductions:250,status:"In Transit"},
+{tripId:"TR-1003",date:"2026-09-19",vehicleNo:"UP64DT7788",transporter:"Rudra Transport",loadingLocation:"Vindhyanagar",unloadingLocation:"Karimuddinpur",gatePassNo:"GP-903",challanNo:"CH-503",loadingQty:30,unloadingQty:29.8,freight:17500,cashAdvance:2500,bankAdvance:2500,deductions:200,status:"Completed"},
+{tripId:"TR-1004",date:"2026-09-20",vehicleNo:"UP64ET8899",transporter:"Maa Logistics",loadingLocation:"Vindhyanagar",unloadingLocation:"Ghazipur",gatePassNo:"GP-904",challanNo:"CH-504",loadingQty:32,unloadingQty:0,freight:19000,cashAdvance:2000,bankAdvance:1000,deductions:0,status:"Pending"},
+{tripId:"TR-1005",date:"2026-09-20",vehicleNo:"UP64FT9900",transporter:"Shiv Transport",loadingLocation:"Vindhyanagar",unloadingLocation:"Jaunpur",gatePassNo:"GP-905",challanNo:"CH-505",loadingQty:31,unloadingQty:30.5,freight:21000,cashAdvance:3500,bankAdvance:1500,deductions:300,status:"Completed"}];
+const money=n=>"₹"+Math.round(n).toLocaleString("en-IN");
+function opts(id,key,all){let s=document.getElementById(id),v=s.value;let vals=[...new Set(trips.map(x=>x[key]).filter(Boolean))].sort();s.innerHTML='<option value="">All '+all+'</option>'+vals.map(x=>'<option>'+x+'</option>').join('');s.value=v}
+function filtered(){let f=document.getElementById("from").value,t=document.getElementById("to").value,l=document.getElementById("load").value,u=document.getElementById("unload").value,tr=document.getElementById("trans").value,st=document.getElementById("status").value;return trips.filter(x=>(!f||x.date>=f)&&(!t||x.date<=t)&&(!l||x.loadingLocation==l)&&(!u||x.unloadingLocation==u)&&(!tr||x.transporter==tr)&&(!st||x.status==st))}
+function render(){let a=filtered(),qty=a.reduce((s,x)=>s+x.loadingQty,0),uq=a.reduce((s,x)=>s+x.unloadingQty,0),fre=a.reduce((s,x)=>s+x.freight,0),adv=a.reduce((s,x)=>s+x.cashAdvance+x.bankAdvance,0),ded=a.reduce((s,x)=>s+x.deductions,0),vehicles=new Set(a.map(x=>x.vehicleNo)).size;
+document.getElementById("kpis").innerHTML=[["Total Trips",a.length,""],["Vehicles",vehicles,"unique"],["Loaded Qty",qty.toFixed(1)+" MT",""],["Unloaded Qty",uq.toFixed(1)+" MT",""],["Freight",money(fre),""],["Net Payable",money(fre-adv-ded),"after advance & deductions"]].map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div><div class="sub">'+x[2]+'</div></div>').join("");
+bars("locationChart",a,"unloadingLocation");bars("transChart",a,"transporter");
+document.getElementById("count").textContent=a.length+" trip(s) matching filters";
+document.getElementById("rows").innerHTML=a.length?a.map(x=>{let sh=x.loadingQty-x.unloadingQty,ad=x.cashAdvance+x.bankAdvance;return '<tr><td>'+x.tripId+'</td><td>'+x.date+'</td><td>'+x.vehicleNo+'</td><td>'+x.transporter+'</td><td>'+x.loadingLocation+'</td><td>'+x.unloadingLocation+'</td><td>'+x.gatePassNo+'</td><td>'+x.challanNo+'</td><td>'+x.loadingQty.toFixed(1)+'</td><td>'+x.unloadingQty.toFixed(1)+'</td><td>'+sh.toFixed(1)+'</td><td>'+money(x.freight)+'</td><td>'+money(ad)+'</td><td>'+money(x.deductions)+'</td><td>'+money(x.freight-ad-x.deductions)+'</td><td><span class="badge '+x.status.toLowerCase().replace(" ","-")+'">'+x.status+'</span></td></tr>'}).join(""):'<tr><td colspan="16" class="empty">No trips found for the selected filters.</td></tr>'}
+function bars(id,a,key){let m={};a.forEach(x=>m[x[key]]=(m[x[key]]||0)+1);let max=Math.max(1,...Object.values(m));document.getElementById(id).innerHTML=Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([k,v])=>'<div class="bar"><span title="'+k+'">'+k+'</span><div class="track"><div class="fill" style="width:'+v/max*100+'%"></div></div><b>'+v+' trips</b></div>').join("")||'<div class="empty">No data</div>'}
+["load","unload","trans","status","from","to"].forEach(id=>document.getElementById(id).addEventListener("change",render));
+opts("load","loadingLocation","Loading Locations");opts("unload","unloadingLocation","Unloading Locations");opts("trans","transporter","Transporters");render();
+document.getElementById("csv").addEventListener("change",e=>{let file=e.target.files[0];if(!file)return;let r=new FileReader();r.onload=()=>{let lines=r.result.trim().split(/\r?\n/),h=lines.shift().split(",");trips=lines.map(line=>{let c=line.split(",");let o={};h.forEach((k,i)=>o[k.trim()]=c[i]?.trim()||"");["loadingQty","unloadingQty","freight","cashAdvance","bankAdvance","deductions"].forEach(k=>o[k]=Number(o[k]||0));return o});opts("load","loadingLocation","Loading Locations");opts("unload","unloadingLocation","Unloading Locations");opts("trans","transporter","Transporters");render()};r.readAsText(file)});
+function downloadCSV(){let a=filtered(),h=["tripId","date","vehicleNo","transporter","loadingLocation","unloadingLocation","gatePassNo","challanNo","loadingQty","unloadingQty","freight","cashAdvance","bankAdvance","deductions","status"];let csv=[h.join(","),...a.map(x=>h.map(k=>x[k]??"").join(","))].join("\n");let b=new Blob([csv],{type:"text/csv"}),u=URL.createObjectURL(b),aEl=document.createElement("a");aEl.href=u;aEl.download="rudra-trip-report.csv";aEl.click();URL.revokeObjectURL(u)}
+</script></body></html>
