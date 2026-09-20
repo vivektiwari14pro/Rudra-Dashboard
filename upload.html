@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Upload CSV | Rudra</title><link rel="stylesheet" href="style.css">
+<style>
+.wrap{max-width:1000px;margin:auto;padding:24px}.drop{border:2px dashed #64748b;border-radius:16px;padding:36px;text-align:center;background:#111827}.drop input{margin:18px auto;display:block}.hint{font-size:13px;color:#94a3b8}.success{padding:14px;border-radius:10px;background:#064e3b;margin-top:16px}.error{padding:14px;border-radius:10px;background:#7f1d1d;margin-top:16px}table{width:100%;border-collapse:collapse;margin-top:20px;font-size:12px}th,td{padding:8px;border-bottom:1px solid #334155;text-align:left}
+</style></head>
+<body>
+<header class="top"><div class="brand">🚚 Rudra Transport<small>CSV Data Update</small></div><div><a class="btn" href="index.html">📊 Dashboard</a></div></header>
+<div class="wrap">
+<h1 class="title">Update Dashboard with CSV</h1>
+<p class="subtitle">Upload your trip CSV. The dashboard will immediately use the uploaded data on this browser.</p>
+<div class="card">
+<h3>1. CSV format</h3>
+<p class="hint">Required headers: tripId,date,vehicleNo,transporter,loadingLocation,unloadingLocation,gatePassNo,challanNo,loadingQty,unloadingQty,freight,cashAdvance,bankAdvance,deductions,hsdSlipNo,gps,fastag,status</p>
+<a class="btn primary" href="csv-template.csv" download>⬇ Download CSV Template</a>
+</div>
+<div class="drop" style="margin-top:18px">
+<h2>2. Upload your CSV</h2>
+<input id="file" type="file" accept=".csv,text/csv">
+<p class="hint">After upload, open Dashboard. Your KPI cards and charts will use this data.</p>
+</div>
+<div id="msg"></div>
+<div class="card" style="margin-top:18px">
+<h3>Current browser data</h3><div id="count" class="value">0 trips</div>
+<button class="btn" id="clear">Reset to sample data</button>
+</div>
+</div>
+<script>
+const KEY='rudraTripsV1';
+const headers=['tripId','date','vehicleNo','transporter','loadingLocation','unloadingLocation','gatePassNo','challanNo','loadingQty','unloadingQty','freight','cashAdvance','bankAdvance','deductions','hsdSlipNo','gps','fastag','status'];
+function parseCSV(text){
+  const rows=[]; let row=[], cell='', quoted=false;
+  for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1];
+    if(c==='"'){if(quoted&&n==='"'){cell+='"';i++;}else quoted=!quoted;}
+    else if(c===','&&!quoted){row.push(cell.trim());cell='';}
+    else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&n==='\n')i++;row.push(cell.trim());cell='';if(row.some(v=>v!=='')){rows.push(row)}row=[];}
+    else cell+=c;
+  }
+  if(cell!==''||row.length){row.push(cell.trim());if(row.some(v=>v!==''))rows.push(row);}
+  return rows;
+}
+function num(v){const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:0}
+function normalize(obj){return {...obj,loadingQty:num(obj.loadingQty),unloadingQty:num(obj.unloadingQty),freight:num(obj.freight),cashAdvance:num(obj.cashAdvance),bankAdvance:num(obj.bankAdvance),deductions:num(obj.deductions)}}
+document.getElementById('file').addEventListener('change',e=>{
+ const f=e.target.files[0]; if(!f)return;
+ const reader=new FileReader();
+ reader.onload=()=>{
+  try{
+   const rows=parseCSV(reader.result);
+   if(rows.length<2)throw new Error('CSV has no data rows.');
+   const hdr=rows[0].map(x=>x.replace(/^\uFEFF/,'').trim());
+   const missing=headers.filter(h=>!hdr.includes(h));
+   if(missing.length)throw new Error('Missing headers: '+missing.join(', '));
+   const trips=rows.slice(1).map(r=>{const o={};headers.forEach(h=>o[h]=r[hdr.indexOf(h)]??'');return normalize(o)}).filter(x=>x.tripId||x.vehicleNo);
+   if(!trips.length)throw new Error('No valid trip rows found.');
+   localStorage.setItem(KEY,JSON.stringify(trips));
+   document.getElementById('msg').innerHTML='<div class="success">✅ '+trips.length+' trips uploaded successfully. <a href="index.html">Open Dashboard →</a></div>';
+   document.getElementById('count').textContent=trips.length+' trips';
+  }catch(err){document.getElementById('msg').innerHTML='<div class="error">❌ '+err.message+'</div>'}
+ };
+ reader.readAsText(f);
+});
+function refresh(){const d=JSON.parse(localStorage.getItem(KEY)||'null');document.getElementById('count').textContent=(d?d.length:5)+' trips '+(d?'(uploaded)':'(sample)')}
+document.getElementById('clear').onclick=()=>{localStorage.removeItem(KEY);refresh();document.getElementById('msg').innerHTML='<div class="success">Sample data restored. Upload a CSV whenever you are ready.</div>'};
+refresh();
+</script></body></html>
